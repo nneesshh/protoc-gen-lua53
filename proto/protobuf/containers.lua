@@ -42,7 +42,7 @@ local _RCFC_meta = {
         listener:Modified()
     end,
     __newindex = function(self, key, value)
-        error("RepeatedCompositeFieldContainer Can't set value directly")
+        error("RepeatedCompositeFieldContainer Can't set value directly, use \"msg:append(x)\" instead!!!")
     end
 }
 _RCFC_meta.__index = _RCFC_meta
@@ -66,7 +66,7 @@ local _RSFC_meta = {
         self._listener:Modified()
     end,
     __newindex = function(self, key, value)
-        error("RepeatedCompositeFieldContainer Can't set value directly")
+        error("RepeatedScalarFieldContainer Can't set value directly, use \"msg:append(x)\" instead!!!")
     end
 }
 _RSFC_meta.__index = _RSFC_meta
