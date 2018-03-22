@@ -1,0 +1,4 @@
+*.py linguist-language=Lua
+*.js linguist-language=Lua
+*.css linguist-language=Lua
+*.html linguist-language=Lua
