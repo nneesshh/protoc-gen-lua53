@@ -270,7 +270,11 @@ static int varint_decoder(lua_State *L) {
 		luaL_error(L, "error data %s, len:%d", buffer, len);
 	}
 	else {
-		lua_pushinteger(L, (lua_Number)unpack_varint(buffer, len));
+#if LUA_VERSION_NUM < 502
+		lua_pushnumber(L, (lua_Number)unpack_varint(buffer, len));
+#else
+		lua_pushinteger(L, unpack_varint(buffer, len));
+#endif
 		lua_pushinteger(L, len + pos);
 	}
 	return 2;
@@ -288,7 +292,11 @@ static int signed_varint_decoder(lua_State *L) {
 		luaL_error(L, "error data %s, len:%d", buffer, len);
 	}
 	else {
-		lua_pushinteger(L, (lua_Number)(int64_t)unpack_varint(buffer, len));
+#if LUA_VERSION_NUM < 502
+		lua_pushnumber(L, (lua_Number)(int64_t)unpack_varint(buffer, len));
+#else
+		lua_pushinteger(L, unpack_varint(buffer, len));
+#endif
 		lua_pushinteger(L, len + pos);
 	}
 	return 2;
@@ -380,7 +388,11 @@ static int struct_unpack(lua_State *L) {
 	}
 
 	case 'q': {
-		lua_pushinteger(L, (lua_Number)*(int64_t*)unpack_fixed64(buffer, out));
+#if LUA_VERSION_NUM < 502
+		lua_pushnumber(L, (lua_Number)*(int64_t*)unpack_fixed64(buffer, out));
+#else
+		lua_pushinteger(L, unpack_fixed64(buffer, out));
+#endif
 		break;
 	}
 
@@ -395,12 +407,20 @@ static int struct_unpack(lua_State *L) {
 	}
 
 	case 'I': {
-		lua_pushinteger(L, *(uint32_t*)unpack_fixed32(buffer, out));
+#if LUA_VERSION_NUM < 502
+		lua_pushnumber(L, *(uint32_t*)unpack_fixed32(buffer, out));
+#else
+		lua_pushinteger(L, unpack_fixed32(buffer, out));
+#endif
 		break;
 	}
 
 	case 'Q': {
-		lua_pushinteger(L, (lua_Number)*(uint64_t*)unpack_fixed64(buffer, out));
+#if LUA_VERSION_NUM < 502
+		lua_pushnumber(L, (lua_Number)*(uint64_t*)unpack_fixed64(buffer, out));
+#else
+		lua_pushinteger(L, unpack_fixed64(buffer, out));
+#endif
 		break;
 	}
 
@@ -499,9 +519,15 @@ int luaopen_pb(lua_State *L) {
 	luaL_newmetatable(L, IOSTRING_META);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
+#if LUA_VERSION_NUM < 502
+	luaL_register(L, NULL, _c_iostring_m);
+	lua_pop(L, 1);
+	luaL_register(L, "pb", _pb);
+#else 
 	luaL_setfuncs(L, _c_iostring_m, 0);
 	lua_pop(L, 1);
 	luaL_newlib(L, _pb);
+#endif
 
 	assert(1 == lua_gettop(L) - top);
 	return 1;

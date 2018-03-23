@@ -257,6 +257,11 @@ def code_gen_enum_item(index, enum_value, env):
         "%s = protobuf.EnumValueDescriptor()\n"% obj_name
     )
 
+    # modified by n.lee
+    env.descriptor.append(
+        "_M.E_%s = %d\n"% (full_name.upper().replace('.', '_'), enum_value.number)
+    )
+
     context = Writer(obj_name)
     context('.name = "%s"\n' % enum_value.name)
     context('.index = %d\n' % index)
@@ -279,11 +284,18 @@ def code_gen_enum(enum_desc, env):
     context('.full_name = "%s"\n' % env.get_global_name())
 
     values = []
+    # modified by n.lee
+    enum_max = 0
     for i, enum_value in enumerate(enum_desc.value):
+        if enum_value.number > enum_max:
+            enum_max = enum_value.number
         values.append(code_gen_enum_item(i, enum_value, env))
     context('.values = {%s}\n' % ','.join(values))
 
     env.context.append(context.getvalue())
+    env.descriptor.append(
+        "_M.E_%s_MAX = %d\n\n"% (full_name.upper().replace('.', '_'), enum_max)
+    )
     env.exit()
     return obj_name
 
@@ -327,15 +339,21 @@ def code_gen_field(index, field_desc, env):
         # case 3: local message_type should use XXX_XXX
         (type_name, isImport) = env.get_ref_name(field_desc.type_name)
         type_name = type_name.upper()
-        if not isImport:
+        # modified by n.lee
+        if isImport:
+            if field_desc.type == FDP.TYPE_MESSAGE:
+                context('.message_type = %s_META\n' % type_name)
+            else:
+                context('.enum_type = %s\n' % type_name)
+        else:
             type_name = type_name.replace('.', '_')
             if field_desc.type == FDP.TYPE_ENUM:
                 type_name = "localTable." + type_name
 
-        if field_desc.type == FDP.TYPE_MESSAGE:
-            context('.message_type = %s\n' % type_name)
-        else:
-            context('.enum_type = %s\n' % type_name)
+            if field_desc.type == FDP.TYPE_MESSAGE:
+                context('.message_type = _M.%s_META\n' % type_name)
+            else:
+                context('.enum_type = %s\n' % type_name)
 
     if field_desc.HasField('extendee'):
         (type_name, isImport) = env.get_ref_name(field_desc.extendee)
@@ -352,16 +370,12 @@ def code_gen_message(message_descriptor, env, containing_type = None):
     env.enter(message_descriptor.name)
     full_name = env.get_local_name()
     obj_name = full_name.upper().replace('.', '_')
+    # modified by n.lee
     env.descriptor.append(
-        "%s = protobuf.Descriptor()\n"% obj_name
+        "_M.%s_META = protobuf.Descriptor()\n"% obj_name
     )
 
-    # modified by lizhy
-    env.descriptor.append(
-        "_G._ModType.%s_PB_%s = %s;\n" % (env.filename.upper(), obj_name, obj_name)
-    )
-
-    context = Writer(obj_name)
+    context = Writer('_M.%s_META'% obj_name)
     context('.name = "%s"\n' % message_descriptor.name)
     context('.full_name = "%s"\n' % env.get_global_name())
 
@@ -394,10 +408,13 @@ def code_gen_message(message_descriptor, env, containing_type = None):
     context('.extensions = {%s}\n' % ', '.join(extensions))
 
     if containing_type:
-        context('.containing_type = %s\n' % containing_type)
+        context('.containing_type = _M.%s_META\n' % containing_type)
 
-    env.message.append('%s = protobuf.Message(%s)\n' % (full_name,
-                                                        obj_name))
+    # modified by n.lee
+    #env.message.append('%s = protobuf.Message(%s)\n' % (full_name,
+    #                                                    obj_name))
+    env.message.append('_M.%s = protobuf.Message(_M.%s_META)\n' % (full_name,
+                                                                  obj_name))
 
     env.context.append(context.getvalue())
     env.exit()
@@ -419,11 +436,19 @@ def code_gen_file(proto_file, env, is_gen):
 
 #    for field_desc in proto_file.extension:
 #        code_gen_extensions(field_desc, field_desc.name, env)
-
+    # modified by n.lee
     for enum_desc in proto_file.enum_type:
         code_gen_enum(enum_desc, env)
+        '''
+        enum_max = 0
         for enum_value in enum_desc.value:
-            env.enum.append('%s = %d\n' % (enum_value.name, enum_value.number))
+            if enum_value.number > enum_max:
+                enum_max = enum_value.number
+            env.enum.append('_M.E_%s = %d\n' % (enum_value.name, enum_value.number))
+
+        enum_desc_name = enum_desc.name
+        env.enum.append("_M.E_%s_MAX = %d\n\n"% (enum_desc_name, enum_max))
+        '''
 
     for msg_desc in proto_file.message_type:
         code_gen_message(msg_desc, env)
@@ -434,16 +459,13 @@ def code_gen_file(proto_file, env, is_gen):
         lua('local protobuf = require "protobuf"\n')
         for i in includes:
             lua('local %s_PB = require("%s_pb")\n' % (i.upper(), i))
-        #lua("module('%s_pb')\n" % env.filename)
 
-        lua('local m_table = {}\n')
-        lua("setmetatable(m_table,{__index = _G})\n")
-        lua("local _ENV = m_table")
+        # modified by n.lee
+        lua('local _M = {}\n')
+        #lua("setmetatable(_M,{__index = _G})\n")
+        lua("_G.%s_pb = _M\n" % env.filename)
 
-        # add by lizhy
-        lua("\n\n_G.%s_pb = m_table\n" % env.filename)
-
-        lua('\n')
+        lua('\n\n')
         lua("local localTable = {}\n")
         map(lua, env.descriptor)
         lua('\n')
@@ -456,7 +478,7 @@ def code_gen_file(proto_file, env, is_gen):
         lua('\n')
         map(lua, env.register)
 
-        lua("return m_table")
+        lua("return _M")
 
         _files[env.filename+ '_pb.lua'] = lua.getvalue()
     env.exit_file()
