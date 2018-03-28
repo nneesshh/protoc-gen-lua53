@@ -15,15 +15,10 @@
 --  CREATED:  2010年08月02日 16时15分42秒 CST
 --------------------------------------------------------------------------------
 --
-local setmetatable = setmetatable
-local table = table
-local rawset = rawset
-local error = error
 
--- module "containers"
+-- module("containers")
 local containers = {}
-setmetatable(containers,{__index = _G})
-local _ENV = containers
+local _M = containers
 
 local _RCFC_meta = {
     add = function(self)
@@ -42,12 +37,12 @@ local _RCFC_meta = {
         listener:Modified()
     end,
     __newindex = function(self, key, value)
-        error("RepeatedCompositeFieldContainer Can't set value directly, use \"msg:append(x)\" instead!!!")
+        error("RepeatedCompositeFieldContainer Can't set value directly, use \"msg:add(x)\" instead!!!")
     end
 }
 _RCFC_meta.__index = _RCFC_meta
 
-function RepeatedCompositeFieldContainer(listener, message_descriptor)
+function _M.RepeatedCompositeFieldContainer(listener, message_descriptor)
     local o = {
         _listener = listener,
         _message_descriptor = message_descriptor
@@ -71,13 +66,13 @@ local _RSFC_meta = {
 }
 _RSFC_meta.__index = _RSFC_meta
 
-function RepeatedScalarFieldContainer(listener, type_checker)
+function _M.RepeatedScalarFieldContainer(listener, type_checker)
     local o = {}
     o._listener = listener
     o._type_checker = type_checker
     return setmetatable(o, _RSFC_meta)
 end
 
-return containers
+return _M
 
 

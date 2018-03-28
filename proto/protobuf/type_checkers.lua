@@ -16,16 +16,11 @@
 --------------------------------------------------------------------------------
 --
 
-local type = type
-local error = error
-local string = string
-
--- module "type_checkers"
+-- module("type_checkers")
 local type_checkers = {}
-setmetatable(type_checkers,{__index = _G})
-local _ENV = type_checkers
+local _M = type_checkers
 
-function TypeChecker(acceptable_types)
+function _M.TypeChecker(acceptable_types)
     local acceptable_types = acceptable_types
 
     return function(proposed_value)
@@ -37,7 +32,7 @@ function TypeChecker(acceptable_types)
     end
 end
 
-function Int32ValueChecker()
+function _M.Int32ValueChecker()
     local _MIN = -2147483648
     local _MAX = 2147483647
     return function(proposed_value)
@@ -51,7 +46,7 @@ function Int32ValueChecker()
     end
 end
 
-function Uint32ValueChecker(IntValueChecker)
+function _M.Uint32ValueChecker(IntValueChecker)
     local _MIN = 0
     local _MAX = 0xffffffff
 
@@ -66,7 +61,7 @@ function Uint32ValueChecker(IntValueChecker)
     end
 end
 
-function Int64ValueChecker()
+function _M.Int64ValueChecker()
     local _MIN = -0x8000000000000000
     local _MAX =  0x7fffffffffffffff
     return function(proposed_value)
@@ -80,7 +75,7 @@ function Int64ValueChecker()
     end
 end
 
-function Uint64ValueChecker(IntValueChecker)
+function _M.Uint64ValueChecker(IntValueChecker)
     local _MIN = 0
     local _MAX = 0x7fffffffffffffff
 
@@ -95,7 +90,7 @@ function Uint64ValueChecker(IntValueChecker)
     end
 end
 
-function UnicodeValueChecker()
+function _M.UnicodeValueChecker()
     return function (proposed_value)
         if type(proposed_value) ~= 'string' then
             error(string.format('%s has type %s, but expected one of: string', proposed_value, type(proposed_value)))
@@ -103,4 +98,4 @@ function UnicodeValueChecker()
     end
 end
 
-return type_checkers
+return _M

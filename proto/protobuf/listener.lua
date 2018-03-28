@@ -15,19 +15,17 @@
 --  CREATED:  2010年08月02日 17时35分25秒 CST
 --------------------------------------------------------------------------------
 --
-local setmetatable = setmetatable
 
--- module "listener"
+-- module("listener")
 local listener = {}
-setmetatable(listener,{__index = _G})
-local _ENV = listener
+local _M = listener
 
 local _null_listener = {
     Modified = function()
     end
 }
 
-function NullMessageListener()
+function _M.NullMessageListener()
     return _null_listener
 end
 
@@ -43,7 +41,7 @@ local _listener_meta = {
 }
 _listener_meta.__index = _listener_meta
 
-function Listener(parent_message)
+function _M.Listener(parent_message)
     local o = {}
     o.__mode = "v"
     o._parent_message = parent_message
@@ -51,5 +49,5 @@ function Listener(parent_message)
     return setmetatable(o, _listener_meta)
 end
 
-return listener
+return _M
 

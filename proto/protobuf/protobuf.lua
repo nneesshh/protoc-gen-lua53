@@ -16,35 +16,24 @@
 --------------------------------------------------------------------------------
 --
 
-local setmetatable = setmetatable
-local rawset = rawset
-local rawget = rawget
-local error = error
-local ipairs = ipairs
-local pairs = pairs
-local print = print
-local table = table 
-local string = string
-local tostring = tostring
-local type = type
-
 local pb = require "pb"
-local wire_format = require "wire_format"
-local type_checkers = require "type_checkers"
-local encoder = require "encoder"
-local decoder = require "decoder"
-local listener_mod = require "listener"
-local containers = require "containers"
-local descriptor = require "descriptor"
+
+local cwd = (...):gsub('%.[^%.]+$', '') .. "."
+local wire_format = cwd and require (cwd.."wire_format") or require "wire_format"
+local type_checkers = cwd and require (cwd.."type_checkers") or require "type_checkers"
+local encoder = cwd and require (cwd.."encoder") or require "encoder"
+local decoder = cwd and require (cwd.."decoder") or require "decoder"
+local listener_mod = cwd and require (cwd.."listener") or require "listener"
+local containers = cwd and require (cwd.."containers") or require "containers"
+local descriptor = cwd and require (cwd.."descriptor") or require "descriptor"
 local FieldDescriptor = descriptor.FieldDescriptor
-local text_format = require "text_format"
+local text_format = cwd and require (cwd.."text_format") or require "text_format"
 
 -- module("protobuf")
 local protobuf = {}
-setmetatable(protobuf,{__index = _G})
-local _ENV = protobuf
+local _M = protobuf
 
-local function make_descriptor(name, descriptor, usable_key)
+local function _make_descriptor(name, descriptor, usable_key)
     local meta = {
         __newindex = function(self, key, value)
             if usable_key[key] then
@@ -63,7 +52,7 @@ local function make_descriptor(name, descriptor, usable_key)
 end
 
 
-make_descriptor("Descriptor",  {}, {
+_make_descriptor("Descriptor",  {}, {
     name = true,
     full_name = true,
     filename = true,
@@ -77,7 +66,7 @@ make_descriptor("Descriptor",  {}, {
     extension_ranges = true,
 })
 
-make_descriptor("FieldDescriptor", FieldDescriptor, {
+_make_descriptor("FieldDescriptor", FieldDescriptor, {
     name = true,
     full_name = true,
     index = true,
@@ -94,7 +83,7 @@ make_descriptor("FieldDescriptor", FieldDescriptor, {
     extension_scope = true,
 })
 
-make_descriptor("EnumDescriptor", {}, {
+_make_descriptor("EnumDescriptor", {}, {
     name = true,
     full_name = true,
     values = true,
@@ -102,7 +91,7 @@ make_descriptor("EnumDescriptor", {}, {
     options = true
 })
 
-make_descriptor("EnumValueDescriptor", {}, {
+_make_descriptor("EnumValueDescriptor", {}, {
     name = true,
     index = true,
     number = true,
@@ -257,11 +246,11 @@ local FIELD_TYPE_TO_WIRE_TYPE = {
     [FieldDescriptor.TYPE_SINT64] = wire_format.WIRETYPE_VARINT
 }
 
-local function IsTypePackable(field_type)
+local function _IsTypePackable(field_type)
     return NON_PACKABLE_TYPES[field_type] == nil
 end
 
-local function GetTypeChecker(cpp_type, field_type)
+local function _GetTypeChecker(cpp_type, field_type)
     if (cpp_type == FieldDescriptor.CPPTYPE_STRING and field_type == FieldDescriptor.TYPE_STRING) then
         return type_checkers.UnicodeValueChecker()
     end
@@ -279,7 +268,7 @@ local function _DefaultValueConstructorForField(field)
                 return containers.RepeatedCompositeFieldContainer(message._listener_for_children, message_type)
             end
         else
-            local type_checker = GetTypeChecker(field.cpp_type, field.type)
+            local type_checker = _GetTypeChecker(field.cpp_type, field.type)
             return function (message)
                 return containers.RepeatedScalarFieldContainer(message._listener_for_children, type_checker)
             end
@@ -312,7 +301,7 @@ local function _AttachFieldHelpers(message_meta, field_descriptor)
     end
   
     AddDecoder(FIELD_TYPE_TO_WIRE_TYPE[field_descriptor.type], False)
-    if is_repeated and IsTypePackable(field_descriptor.type) then
+    if is_repeated and _IsTypePackable(field_descriptor.type) then
         AddDecoder(wire_format.WIRETYPE_LENGTH_DELIMITED, True)
     end
 end
@@ -377,7 +366,7 @@ end
 
 local function _AddPropertiesForNonRepeatedScalarField(field, message)
     local property_name = field.name
-    local type_checker = GetTypeChecker(field.cpp_type, field.type)
+    local type_checker = _GetTypeChecker(field.cpp_type, field.type)
     local default_value = field.default_value
 
     message._getter[property_name] = function(self)
@@ -436,7 +425,7 @@ local _ED_meta = {
             error('Cannot assign to extension "'.. extension_handle.full_name .. '" because it is a repeated or composite type.')
         end
 
-        local type_checker = GetTypeChecker(extension_handle.cpp_type, extension_handle.type)
+        local type_checker = _GetTypeChecker(extension_handle.cpp_type, extension_handle.type)
         type_checker.CheckValue(value)
         _extended_message._fields[extension_handle] = value
         _extended_message._Modified()
@@ -850,7 +839,7 @@ local function _AddPrivateHelperMethods(message_meta)
     message_meta._member.SetInParent = Modified
 end
 
-local function property_getter(message_meta)
+local function _property_getter(message_meta)
     local getter = message_meta._getter
     local member = message_meta._member
 	
@@ -864,7 +853,7 @@ local function property_getter(message_meta)
 	end
 end
 
-local function property_setter(message_meta)
+local function _property_setter(message_meta)
 	local setter = message_meta._setter
 
 	return function (self, property, value)
@@ -877,14 +866,14 @@ local function property_setter(message_meta)
 	end
 end
 
-function _AddClassAttributesForNestedExtensions(descriptor, message_meta)
+local function _AddClassAttributesForNestedExtensions(descriptor, message_meta)
     local extension_dict = descriptor._extensions_by_name
     for extension_name, extension_field in pairs(extension_dict) do
         message_meta._member[extension_name] = extension_field
     end
 end
 
-local function Message(descriptor)
+local function _Message(descriptor)
     local message_meta = {}
     message_meta._decoders_by_tag = {}
     rawset(descriptor, "_extensions_by_name", {})
@@ -923,13 +912,13 @@ local function Message(descriptor)
     _AddMessageMethods(descriptor, message_meta)
     _AddPrivateHelperMethods(message_meta)
 
-    message_meta.__index = property_getter(message_meta)
-    message_meta.__newindex = property_setter(message_meta) 
+    message_meta.__index = _property_getter(message_meta)
+    message_meta.__newindex = _property_setter(message_meta) 
 
     return ns 
 end
 
-protobuf.Message = Message
+_M.Message = _Message
 
-return protobuf
+return _M
 

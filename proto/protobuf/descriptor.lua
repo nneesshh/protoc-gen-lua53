@@ -16,12 +16,11 @@
 --------------------------------------------------------------------------------
 --
 
--- module "descriptor"
+-- module("descriptor")
 local descriptor = {}
-setmetatable(descriptor,{__index = _G})
-local _ENV = descriptor
+local _M = descriptor
 
-FieldDescriptor = {
+_M.FieldDescriptor = {
     TYPE_DOUBLE         = 1,
     TYPE_FLOAT          = 2,
     TYPE_INT64          = 3,
@@ -66,4 +65,4 @@ FieldDescriptor = {
     MAX_LABEL           = 3
 }
 
-return descriptor
+return _M

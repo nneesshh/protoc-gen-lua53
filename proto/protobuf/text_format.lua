@@ -14,22 +14,15 @@
 --  CREATED:  2010年08月05日 15时14分13秒 CST
 --------------------------------------------------------------------------------
 --
-local string = string
-local math = math
-local print = print
-local getmetatable = getmetatable
-local table = table
-local ipairs = ipairs
-local tostring = tostring
 
-local descriptor = require "descriptor"
+local cwd = (...):gsub('%.[^%.]+$', '') .. "."
+local descriptor = cwd and require (cwd.."descriptor") or require "descriptor"
 
--- module "text_format"
+-- module("text_format")
 local text_format = {}
-setmetatable(text_format,{__index = _G})
-local _ENV = text_format
+local _M = text_format
 
-function format(buffer)
+function _M.format(buffer)
     local len = string.len( buffer )	
     for i = 1, len, 16 do		
         local text = ""	
@@ -42,7 +35,7 @@ end
 
 local FieldDescriptor = descriptor.FieldDescriptor
 
-msg_format_indent = function(write, msg, indent)
+function _M.msg_format_indent(write, msg, indent)
     for field, value in msg:ListFields() do
         local print_field = function(field_value)
             local name = field.name
@@ -54,7 +47,7 @@ msg_format_indent = function(write, msg, indent)
                 else
                     write(name .. " {\n")
                 end
-                msg_format_indent(write, field_value, indent + 4)
+                _M.msg_format_indent(write, field_value, indent + 4)
                 write(string.rep(" ", indent))
                 write("}\n")
             else
@@ -71,13 +64,13 @@ msg_format_indent = function(write, msg, indent)
     end
 end
 
-function msg_format(msg)
+function _M.msg_format(msg)
     local out = {}
     local write = function(value)
         out[#out + 1] = value
     end
-    msg_format_indent(write, msg, 0)
+    _M.msg_format_indent(write, msg, 0)
     return table.concat(out)
 end
 
-return text_format
+return _M
