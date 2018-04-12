@@ -15,8 +15,7 @@
 --------------------------------------------------------------------------------
 --
 
-local cwd = (...):gsub('%.[^%.]+$', '') .. "."
-local descriptor = cwd and require (cwd.."descriptor") or require "descriptor"
+local descriptor = require "descriptor"
 
 -- module("text_format")
 local text_format = {}

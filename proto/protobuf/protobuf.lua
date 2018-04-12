@@ -18,16 +18,15 @@
 
 local pb = require "pb"
 
-local cwd = (...):gsub('%.[^%.]+$', '') .. "."
-local wire_format = cwd and require (cwd.."wire_format") or require "wire_format"
-local type_checkers = cwd and require (cwd.."type_checkers") or require "type_checkers"
-local encoder = cwd and require (cwd.."encoder") or require "encoder"
-local decoder = cwd and require (cwd.."decoder") or require "decoder"
-local listener_mod = cwd and require (cwd.."listener") or require "listener"
-local containers = cwd and require (cwd.."containers") or require "containers"
-local descriptor = cwd and require (cwd.."descriptor") or require "descriptor"
+local wire_format = require "wire_format"
+local type_checkers = require "type_checkers"
+local encoder = require "encoder"
+local decoder = require "decoder"
+local listener_mod = require "listener"
+local containers = require "containers"
+local descriptor = require "descriptor"
 local FieldDescriptor = descriptor.FieldDescriptor
-local text_format = cwd and require (cwd.."text_format") or require "text_format"
+local text_format = require "text_format"
 
 -- module("protobuf")
 local protobuf = {}

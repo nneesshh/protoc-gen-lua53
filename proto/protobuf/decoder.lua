@@ -18,9 +18,8 @@
 
 local pb = require "pb"
 
-local cwd = (...):gsub('%.[^%.]+$', '') .. "."
-local encoder = cwd and require (cwd.."encoder") or require "encoder"
-local wire_format = cwd and require (cwd.."wire_format") or require "wire_format"
+local encoder = require "encoder"
+local wire_format = require "wire_format"
 
 -- module("decoder")
 local decoder = {}

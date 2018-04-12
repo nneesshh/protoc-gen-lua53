@@ -18,8 +18,7 @@
 
 local pb = require "pb"
 
-local cwd = (...):gsub('%.[^%.]+$', '') .. "."
-local wire_format = cwd and require (cwd.."wire_format") or require "wire_format"
+local wire_format = require "wire_format"
 
 -- module("encoder")
 local encoder = {}
