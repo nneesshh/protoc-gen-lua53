@@ -243,12 +243,21 @@ function _M.MessageDecoder(field_number, is_repeated, is_packed, key, new_defaul
                 if new_pos > pend then
                     error('Truncated message.')
                 end
-                if value:add():_InternalParse(buffer, pos, new_pos) ~= new_pos then
+                --[[if value:add():_InternalParse(buffer, pos, new_pos) ~= new_pos then
                     error('Unexpected end-group tag.')
-                end
-                pos = new_pos + tag_len
-                if sub(buffer, new_pos + 1, pos) ~= tag_bytes or new_pos == pend then
-                    return new_pos
+                end]]
+                local pos_, stop_ = value:add():_InternalParse(buffer, pos, new_pos)
+                if stop_ then
+                    -- decode interrupted
+                    return pos_, true
+                else
+                    -- next element data start pos
+                    pos = new_pos + tag_len
+
+                    -- check next element tag is not repeated properly or ending reached
+                    if sub(buffer, new_pos + 1, pos) ~= tag_bytes or new_pos == pend then
+                        return new_pos, false
+                    end
                 end
             end
         end
@@ -265,44 +274,46 @@ function _M.MessageDecoder(field_number, is_repeated, is_packed, key, new_defaul
             if new_pos > pend then
                 error('Truncated message.')
             end
-            if value:_InternalParse(buffer, pos, new_pos) ~= new_pos then
+            --[[if value:_InternalParse(buffer, pos, new_pos) ~= new_pos then
                 error('Unexpected end-group tag.')
             end
-            return new_pos
+            return new_pos]]
+            return value:_InternalParse(buffer, pos, new_pos)
         end
     end
 end
 
 local function _SkipVarint(buffer, pos, pend)
-    local value
-    value, pos = _DecodeVarint(buffer, pos)
-    return pos
+    local value, new_pos = _DecodeVarint(buffer, pos)
+    if new_pos > pend then 
+        error('Truncated message.')
+    end
+    return new_pos
 end
 
 local function _SkipFixed64(buffer, pos, pend)
-    pos = pos + 8
-    if pos > pend then 
+    local new_pos = pos + 8
+    if new_pos > pend then 
         error('Truncated message.')
     end
-    return pos
+    return new_pos
 end
 
 local function _SkipLengthDelimited(buffer, pos, pend)
-    local size
-    size, pos = _DecodeVarint(buffer, pos)
-    pos = pos + size
-    if pos > pend then
+    local size, new_pos = _DecodeVarint(buffer, pos)
+    new_pos = new_pos + size
+    if new_pos > pend then
         error('Truncated message.')
     end
-    return pos
+    return new_pos
 end
 
 local function _SkipFixed32(buffer, pos, pend)
-    pos = pos + 4
-    if pos > pend then
-        error('Truncated message.')
+    local new_pos = pos + 4
+    if new_pos > pend then
+        new_pos('Truncated message.')
     end
-    return pos
+    return new_pos
 end
 
 local function _RaiseInvalidWireType(buffer, pos, pend)

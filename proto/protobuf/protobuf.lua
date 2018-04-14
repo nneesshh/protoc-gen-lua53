@@ -662,35 +662,46 @@ local function _AddMergeFromStringMethod(message_descriptor, message_meta)
         local field_dict = self._fields
         local tag_bytes, new_pos 
         local field_decoder
-        while pos ~= pend do
+        local stop_ = nil
+        while pos ~= pend and not stop_ do
             tag_bytes, new_pos = ReadTag(buffer, pos)
             field_decoder = decoders_by_tag[tag_bytes]
-            if field_decoder == nil then
-                new_pos = SkipField(buffer, new_pos, pend, tag_bytes)
-                if new_pos == -1 then
-                    return pos
+            if field_decoder then
+                pos, stop_ = field_decoder(buffer, new_pos, pend, self, field_dict)
+            else
+                -- skip unknown fields
+                if 0 == string.byte(tag_bytes) then
+                    -- tag is zero, stop parse at once
+                    return new_pos, true
+                else
+                    new_pos = SkipField(buffer, new_pos, pend, tag_bytes)
+                    if new_pos == -1 then
+                        return new_pos, true
+                    end
                 end
                 pos = new_pos
-            else
-                pos = field_decoder(buffer, new_pos, pend, self, field_dict)
             end
         end
-        return pos
+        return pos, stop_
     end
     message_meta._member._InternalParse = _internal_parse 
 
     local merge_from_string = function(self, serialized)
-        local length = #serialized
+        --[[local length = #serialized
         if _internal_parse(self, serialized, 0, length) ~= length then
             error('Unexpected end-group tag.')
         end
-        return length 
+        return length ]]
+        return _internal_parse(self, serialized, 0, #serialized)
     end
     message_meta._member.MergeFromString = merge_from_string
 
     message_meta._member.ParseFromString = function(self, serialized)
         message_meta._member.Clear(self)
-        merge_from_string(self, serialized)
+        --merge_from_string(self, serialized)
+        local length = #serialized
+        local pos = merge_from_string(self, serialized)
+        return (length == pos), pos
     end
 end
 
