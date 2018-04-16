@@ -492,8 +492,10 @@ local function _AddListFieldsMethod(message_descriptor, message_meta)
         local list_field = function(fields)
             local f, s, v = pairs(self._fields)
             local iter = function(a, i)
+                local descriptor = i
+                local value
                 while true do
-                    local descriptor, value = f(a, i)
+                    descriptor, value = f(a, descriptor)
                     if descriptor == nil then
                         return 
                     elseif _IsPresent(descriptor, value) then
