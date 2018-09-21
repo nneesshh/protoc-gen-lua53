@@ -37,7 +37,7 @@ local _RCFC_meta = {
         listener:Modified()
     end,
     __newindex = function(self, key, value)
-        error("RepeatedCompositeFieldContainer Can't set value directly, use \"msg:add(x)\" instead!!!")
+        error("RepeatedCompositeFieldContainer Can't set value directly, use \"local obj=msg:add()\" instead!!!")
     end
 }
 _RCFC_meta.__index = _RCFC_meta

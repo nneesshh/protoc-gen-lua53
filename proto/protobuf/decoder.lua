@@ -74,7 +74,7 @@ local function _SimpleDecoder(wire_type, decode_value)
                     local element, new_pos = decode_value(buffer, pos)
                     value:append(element)
                     pos = new_pos + tag_len
-                    if sub(buffer, new_pos+1, pos) ~= tag_bytes or new_pos >= pend then
+                    if sub(buffer, new_pos + 1, pos) ~= tag_bytes or new_pos >= pend then
                         if new_pos > pend then
                             error('Truncated message.')
                         end
