@@ -30,8 +30,7 @@
 *.exe
 *.out
 *.app
-/bin/Debug/redisservice.ilk
-/build/redisservice.dir/obj/Debug/redisservice.tlog/CL.command.1.tlog
+*.ilk
 *.tlog
 *.log
 *.suo
@@ -41,5 +40,5 @@
 *.ilk
 *.db
 *.opendb
-/build/.vs/redisservice/v15/ipch/AutoPCH/1d800acded623c9b/REDISSERVICE.ipch
-/build/.vs/redisservice/v15/ipch/AutoPCH/402942203bad331b/KJREDISCLIENTCONN.ipch
+*.ipch
+\.vs

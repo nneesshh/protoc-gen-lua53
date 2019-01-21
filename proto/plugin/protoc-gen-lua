@@ -463,7 +463,7 @@ def code_gen_file(proto_file, env, is_gen):
         # modified by n.lee
         lua('local _M = {}\n')
         #lua("setmetatable(_M,{__index = _G})\n")
-        lua("_G.%s_pb = _M\n" % env.filename)
+        lua("-- _G.%s_pb = _M\n" % env.filename)
 
         lua('\n\n')
         lua("local localTable = {}\n")
